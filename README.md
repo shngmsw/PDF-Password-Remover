@@ -10,8 +10,37 @@ PDFファイルのパスワードを解除するElectronアプリケーション
 
 ## 必要な環境
 
-- Node.js 14.0.0以上
-- npm 6.0.0以上
+- Node.js14.0.0以上
+- npm6.0.0以上
+- qpdf（PDFパスワード解除ツール）
+
+### qpdfのインストール
+
+各OSでのqpdfのインストール方法：
+
+#### Windows
+
+```bash
+# chocolateyを使用する場合
+choco install qpdf
+
+# または、公式サイトからインストーラーをダウンロード：
+# https://qpdf.sourceforge.net/
+```
+
+#### macOS
+
+```bash
+# Homebrewを使用
+brew install qpdf
+```
+
+#### Linux (Ubuntu/Debian)
+
+```bash
+sudo apt-get update
+sudo apt-get install qpdf
+```
 
 ## インストール方法
 
@@ -66,7 +95,17 @@ npm run build:linux
 
 - Electron
 - Node.js
-- pdf-lib（PDFファイル処理）
+- qpdf（PDFファイル処理）
+
+## トラブルシューティング
+
+### qpdfが見つからない場合
+
+エラーメッセージ: "qpdf command not found"などが表示される場合
+
+1. qpdfが正しくインストールされているか確認してください
+2. コマンドラインで`qpdf --version`を実行して、qpdfが利用可能か確認してください
+3. OSのPATH環境変数にqpdfのインストールディレクトリが含まれているか確認してください
 
 ## ライセンス
 
