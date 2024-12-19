@@ -49,8 +49,7 @@ ipcMain.handle('unlock-pdf', async (event, { filePath, password }) => {
   try {
     const pdfBytes = await fs.promises.readFile(filePath);
     const pdfDoc = await PDFDocument.load(pdfBytes, { 
-      password,
-      ignoreEncryption: true 
+      password: password
     });
     
     const outputPath = path.join(
