@@ -30,6 +30,9 @@
         "to": "bin",
         "filter": ["**/*"]
       }
+    ],
+    "asarUnpack": [
+      "bin/**"
     ]
   }
 }
