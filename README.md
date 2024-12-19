@@ -1,50 +1,73 @@
 # PDF Password Remover
 
-PDFファイルのパスワードを解除するツールです。
+PDFファイルのパスワードを解除するElectronアプリケーションです。
+
+## 機能
+
+- PDFファイルの選択（ファイル選択ダイアログ）
+- パスワード保護されたPDFファイルのロック解除
+- 解除したPDFファイルの自動保存
+
+## 必要な環境
+
+- Node.js 14.0.0以上
+- npm 6.0.0以上
 
 ## インストール方法
 
-### 実行ファイルをダウンロード（推奨）
-
-[GitHub Releases](https://github.com/yourusername/pdf_pass/releases)から、お使いのOSに合わせた実行ファイルをダウンロードしてください：
-
-- Windows: `pdf_unlocker_windows.exe`
-- macOS: `pdf_unlocker_macos`
-- Linux: `pdf_unlocker_linux`
-
-### ソースコードからビルド
-
-#### 必要な環境
-
-- Python 3.11以上
-- 必要なパッケージ：
-  - pikepdf
-  - tkinterdnd2
-  - pyinstaller
-
-#### ビルド方法
-
-##### Windows
+### 開発環境のセットアップ
 
 ```bash
-pyinstaller --onefile --windowed --hidden-import=pikepdf --add-data "C:\Python311\Lib\site-packages\tkinterdnd2\tkdnd:tkinterdnd2/tkdnd" .\unlock.py
+# リポジトリのクローン
+git clone https://github.com/yourusername/PDF-Password-Remover.git
+cd PDF-Password-Remover
+
+# 依存パッケージのインストール
+npm install
 ```
 
-##### macOS
+### アプリケーションの実行
+
+開発モードで実行：
 
 ```bash
-pyinstaller --onefile --windowed --hidden-import=pikepdf --add-data "/usr/local/lib/python3.11/site-packages/tkinterdnd2/tkdnd:tkinterdnd2/tkdnd" ./unlock.py
+npm start
 ```
 
-##### Linux
+### ビルド方法
+
+Windows用実行ファイルの作成：
 
 ```bash
-pyinstaller --onefile --windowed --hidden-import=pikepdf --add-data "/usr/lib/python3.11/site-packages/tkinterdnd2/tkdnd:tkinterdnd2/tkdnd" ./unlock.py
+npm run build:win
+```
+
+macOS用実行ファイルの作成：
+
+```bash
+npm run build:mac
+```
+
+Linux用実行ファイルの作成：
+
+```bash
+npm run build:linux
 ```
 
 ## 使用方法
 
 1. アプリケーションを起動します
-2. PDFファイルをウィンドウにドラッグ＆ドロップします
-3. PDFのパスワードを入力します
-4. 解除されたPDFファイルが同じフォルダに保存されます
+2. 「PDFファイルを選択」ボタンをクリックしてファイルを選択します
+3. パスワードを入力します
+4. 「パスワードを解除」ボタンをクリックします
+5. 解除されたPDFファイルは元のファイルと同じフォルダーに`decrypted_`というプレフィックス付きで保存されます
+
+## 技術スタック
+
+- Electron
+- Node.js
+- pdf-lib（PDFファイル処理）
+
+## ライセンス
+
+MIT License
