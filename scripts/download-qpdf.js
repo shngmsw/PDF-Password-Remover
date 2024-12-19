@@ -36,7 +36,7 @@ async function installQpdf() {
         
         // バイナリのコピー
         const destPath = path.join(binDir, 'qpdf');
-        fs.copyFileSync(qpdfPath, destPath);
+        execSync(`cp -f "${qpdfPath}" "${destPath}"`);
         execSync(`chmod +x "${destPath}"`);
         
         // 必要なライブラリをコピー
@@ -46,7 +46,7 @@ async function installQpdf() {
         for (const libFile of libFiles) {
           const srcLib = path.join(brewLibPath, libFile);
           const destLib = path.join(libDir, libFile);
-          fs.copyFileSync(srcLib, destLib);
+          execSync(`cp -f "${srcLib}" "${destLib}"`);
         }
         
         // バイナリのrpathを更新
