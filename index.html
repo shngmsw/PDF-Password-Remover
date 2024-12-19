@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>PDF Password Remover</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <h1>PDF Password Remover</h1>
+        
+        <div class="file-section">
+            <div id="file-display">選択されたファイル: なし</div>
+            <button id="select-file" class="button">PDFファイルを選択</button>
+        </div>
+
+        <div class="password-section">
+            <input type="password" id="password" placeholder="パスワードを入力" class="password-input">
+            <button id="unlock-pdf" class="button primary">パスワードを解除</button>
+        </div>
+
+        <div id="message" class="message"></div>
+    </div>
+
+    <script src="renderer.js"></script>
+</body>
+</html>
