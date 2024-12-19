@@ -12,9 +12,9 @@ const binDir = path.join(__dirname, '..', 'bin');
 const libDir = path.join(__dirname, '..', 'lib');
 
 // QPDFのバージョンとダウンロードURL
-const QPDF_VERSION = '11.6.2';
-// 新しいURLフォーマット（リリースタグ形式を修正）
-const WINDOWS_DOWNLOAD_URL = `https://github.com/qpdf/qpdf/releases/download/release-qpdf-${QPDF_VERSION}/qpdf-${QPDF_VERSION}-mingw64.zip`;
+const QPDF_VERSION = '11.4.0';
+const WINDOWS_DOWNLOAD_URL = `https://sourceforge.net/projects/qpdf/files/qpdf/${QPDF_VERSION}/qpdf-${QPDF_VERSION}-mingw64.zip/download`;
+const MACOS_DOWNLOAD_URL = `https://sourceforge.net/projects/qpdf/files/qpdf/${QPDF_VERSION}/qpdf-${QPDF_VERSION}-darwin-x86_64.zip/download`;
 
 // ファイルをダウンロードする関数（リダイレクトに対応）
 async function downloadFile(url, destPath) {
@@ -67,37 +67,56 @@ async function installQpdf() {
   try {
     switch (platform) {
       case 'darwin':
-        // macOSの場合、Homebrewを使用してインストール
-        console.log('Homebrewを使用してqpdfをインストールします...');
-        execSync('brew install qpdf');
+        // macOSの場合、SourceForgeからダウンロード
+        console.log('macOSのqpdfバイナリをダウンロードします...');
         
-        // Homebrewでインストールされたqpdfのパスを取得
-        const brewPrefix = execSync('brew --prefix qpdf').toString().trim();
-        const qpdfPath = path.join(brewPrefix, 'bin', 'qpdf');
-        const brewLibPath = path.join(brewPrefix, 'lib');
-        
-        // バイナリとライブラリをコピー
-        console.log('バイナリとライブラリをコピーします...');
-        
-        // バイナリのコピー
-        const destPath = path.join(binDir, 'qpdf');
-        execSync(`cp -f "${qpdfPath}" "${destPath}"`);
-        execSync(`chmod +x "${destPath}"`);
-        
-        // 必要なライブラリをコピー
-        const libFiles = fs.readdirSync(brewLibPath)
-          .filter(file => file.startsWith('libqpdf'));
-        
-        for (const libFile of libFiles) {
-          const srcLib = path.join(brewLibPath, libFile);
-          const destLib = path.join(libDir, libFile);
-          execSync(`cp -f "${srcLib}" "${destLib}"`);
+        const macosTempDir = path.join(os.tmpdir(), 'qpdf-temp-macos');
+        const macosZipPath = path.join(macosTempDir, 'qpdf.zip');
+
+        // 一時ディレクトリの作成
+        if (!fs.existsSync(macosTempDir)) {
+          fs.mkdirSync(macosTempDir, { recursive: true });
         }
-        
-        // バイナリのrpathを更新
-        execSync(`install_name_tool -add_rpath "@executable_path/../lib" "${destPath}"`);
-        
-        console.log('インストールが完了しました');
+
+        try {
+          // QPDFのダウンロードと展開
+          console.log(`QPDFバージョン${QPDF_VERSION}をダウンロード中...`);
+          await downloadFile(MACOS_DOWNLOAD_URL, macosZipPath);
+
+          console.log('ダウンロードしたファイルを展開中...');
+          await fs.createReadStream(macosZipPath)
+            .pipe(Extract({ path: macosTempDir }))
+            .promise();
+
+          // 必要なファイルをコピー
+          const qpdfBinDir = path.join(macosTempDir, `qpdf-${QPDF_VERSION}-darwin-x86_64`, 'bin');
+          const files = fs.readdirSync(qpdfBinDir);
+
+          console.log('必要なファイルをコピー中...');
+          for (const file of files) {
+            if (file.startsWith('qpdf')) {
+              const srcPath = path.join(qpdfBinDir, file);
+              const destPath = path.join(binDir, file);
+              fs.copyFileSync(srcPath, destPath);
+              execSync(`chmod +x "${destPath}"`);
+              console.log(`コピー完了: ${file}`);
+            }
+             if (file.endsWith('.dylib')) {
+              const srcPath = path.join(qpdfBinDir, file);
+              const destPath = path.join(libDir, file);
+              fs.copyFileSync(srcPath, destPath);
+              console.log(`コピー完了: ${file}`);
+            }
+          }
+
+          console.log('一時ファイルを削除中...');
+          fs.rmSync(macosTempDir, { recursive: true, force: true });
+
+          console.log('macOS用QPDFのインストールが完了しました');
+        } catch (error) {
+          console.error('QPDFのインストール中にエラーが発生しました:', error);
+          throw error;
+        }
         break;
 
       case 'win32':
