@@ -1,7 +1,9 @@
 const { app, BrowserWindow, ipcMain, dialog } = require('electron');
 const path = require('path');
-const { PDFDocument } = require('pdf-lib');
 const fs = require('fs');
+const { exec } = require('child_process');
+const util = require('util');
+const execPromise = util.promisify(exec);
 
 function createWindow() {
   const mainWindow = new BrowserWindow({
@@ -47,32 +49,25 @@ ipcMain.handle('select-pdf', async () => {
 // PDFパスワード解除のハンドラー
 ipcMain.handle('unlock-pdf', async (event, { filePath, password }) => {
   try {
-    const pdfBytes = await fs.promises.readFile(filePath);
-    
-    // パスワードのみを指定してPDFを読み込み
-    const pdfDoc = await PDFDocument.load(pdfBytes, { 
-      password: password
-    });
-    
-    // パスワードが正しくない場合、上記のload時点でエラーが発生します
     const outputPath = path.join(
       path.dirname(filePath),
       `decrypted_${path.basename(filePath)}`
     );
+
+    // qpdfコマンドを使用してパスワード解除を実行
+    const command = `qpdf --password=${password} --decrypt "${filePath}" "${outputPath}"`;
     
-    // 暗号化を解除して保存
-    const savedBytes = await pdfDoc.save({
-      useObjectStreams: false,
-      updateEncryptionDict: false  // 暗号化情報を更新しない
-    });
-    await fs.promises.writeFile(outputPath, savedBytes);
-    
+    await execPromise(command);
     return { success: true, outputPath };
   } catch (error) {
     console.error('PDF処理エラー:', error);
+    
+    // qpdfのエラーメッセージからパスワードエラーを判定
+    const isPasswordError = error.message.includes('invalid password');
+    
     return { 
       success: false, 
-      error: error.message.includes('password') ? 'パスワードが正しくありません' : error.message 
+      error: isPasswordError ? 'パスワードが正しくありません' : 'PDFの処理中にエラーが発生しました'
     };
   }
 });
