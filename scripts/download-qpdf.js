@@ -2,10 +2,35 @@ const fs = require('fs');
 const path = require('path');
 const { execSync } = require('child_process');
 const os = require('os');
+const https = require('https');
+const { createWriteStream } = require('fs');
+const { pipeline } = require('stream/promises');
+const { Extract } = require('unzipper');
 
 // バイナリの保存先ディレクトリ
 const binDir = path.join(__dirname, '..', 'bin');
 const libDir = path.join(__dirname, '..', 'lib');
+
+// QPDFのバージョンとダウンロードURL
+const QPDF_VERSION = '11.6.3';
+const WINDOWS_DOWNLOAD_URL = `https://github.com/qpdf/qpdf/releases/download/v${QPDF_VERSION}/qpdf-${QPDF_VERSION}-mingw64.zip`;
+
+// ファイルをダウンロードする関数
+async function downloadFile(url, destPath) {
+  return new Promise((resolve, reject) => {
+    https.get(url, response => {
+      if (response.statusCode !== 200) {
+        reject(new Error(`Download failed with status code: ${response.statusCode}`));
+        return;
+      }
+
+      const fileStream = createWriteStream(destPath);
+      pipeline(response, fileStream)
+        .then(() => resolve())
+        .catch(reject);
+    }).on('error', reject);
+  });
+}
 
 // プラットフォームに応じたインストール
 async function installQpdf() {
@@ -57,8 +82,47 @@ async function installQpdf() {
 
       case 'win32':
         console.log('Windowsのqpdfバイナリをダウンロードします...');
-        // Windowsの実装は後で追加
-        throw new Error('Windows版は未実装です');
+        
+        const tempDir = path.join(os.tmpdir(), 'qpdf-temp');
+        const zipPath = path.join(tempDir, 'qpdf.zip');
+
+        // 一時ディレクトリの作成
+        if (!fs.existsSync(tempDir)) {
+          fs.mkdirSync(tempDir, { recursive: true });
+        }
+
+        try {
+          // QPDFのダウンロードと展開
+          console.log(`QPDFバージョン${QPDF_VERSION}をダウンロード中...`);
+          await downloadFile(WINDOWS_DOWNLOAD_URL, zipPath);
+
+          console.log('ダウンロードしたファイルを展開中...');
+          await fs.createReadStream(zipPath)
+            .pipe(Extract({ path: tempDir }))
+            .promise();
+
+          // 必要なファイルをコピー
+          const qpdfBinDir = path.join(tempDir, `qpdf-${QPDF_VERSION}-mingw64`, 'bin');
+          const files = fs.readdirSync(qpdfBinDir);
+
+          console.log('必要なファイルをコピー中...');
+          for (const file of files) {
+            if (file.endsWith('.exe') || file.endsWith('.dll')) {
+              const srcPath = path.join(qpdfBinDir, file);
+              const destPath = path.join(binDir, file);
+              fs.copyFileSync(srcPath, destPath);
+            }
+          }
+
+          console.log('一時ファイルを削除中...');
+          fs.rmSync(tempDir, { recursive: true, force: true });
+
+          console.log('Windows用QPDFのインストールが完了しました');
+        } catch (error) {
+          console.error('QPDFのインストール中にエラーが発生しました:', error);
+          throw error;
+        }
+        break;
 
       case 'linux':
         console.log('Linuxのqpdfバイナリをダウンロードします...');
