@@ -51,11 +51,10 @@ function getQpdfPath() {
   // プラットフォーム別のバイナリパス
   switch (platform) {
     case 'win32':
-      return path.join(qpdfPath, 'qpdf-11.6.3-windows-x64', 'bin', 'qpdf.exe');
+      return path.join(qpdfPath, 'qpdf.exe');
     case 'darwin':
-      return path.join(qpdfPath, 'usr', 'local', 'bin', 'qpdf');
     case 'linux':
-      return path.join(qpdfPath, 'qpdf-11.6.3', 'bin', 'qpdf');
+      return path.join(qpdfPath, 'qpdf');
     default:
       throw new Error('未対応のプラットフォームです');
   }
