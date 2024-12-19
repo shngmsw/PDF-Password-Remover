@@ -1,9 +1,8 @@
 import os
 import tkinter as tk
-from tkinter import messagebox, simpledialog
+from tkinter import filedialog, messagebox
 
 import pikepdf
-from tkinterdnd2 import DND_FILES, TkinterDnD
 
 
 def unlock_pdf(input_path, password):
@@ -22,16 +21,17 @@ def unlock_pdf(input_path, password):
         return f"Error: {e}"
 
 
-def handle_drop(event):
-    input_path = event.data.strip("{}")  # ドラッグされたファイルパスを取得
-    if not input_path.lower().endswith(".pdf"):
-        messagebox.showerror("Error", "Please drop a valid PDF file.")
+def open_file_dialog(password_entry, file_label):
+    input_path = filedialog.askopenfilename(
+        title="Select a PDF file", filetypes=(("PDF files", "*.pdf"),))
+    if not input_path:
+        messagebox.showinfo("Cancelled", "File selection cancelled.")
         return
+    
+    file_label.config(text=f"Selected file: {os.path.basename(input_path)}")
 
-    password = simpledialog.askstring(
-        "Password", "Enter the PDF password:", show="*")
+    password = password_entry.get()
     if not password:
-        messagebox.showinfo("Cancelled", "Password entry cancelled.")
         return
 
     result = unlock_pdf(input_path, password)
@@ -43,16 +43,24 @@ def handle_drop(event):
 
 
 def main():
-    root = TkinterDnD.Tk()
+    root = tk.Tk()
     root.title("PDF Unlocker")
     root.geometry("400x200")
 
     label = tk.Label(
-        root, text="Drag and drop a PDF file here", font=("Roboto", 14))
-    label.pack(pady=20)
+        root, text="Click the button to select a PDF file")
+    label.pack(pady=10)
 
-    root.drop_target_register(DND_FILES)
-    root.dnd_bind("<<Drop>>", handle_drop)
+    file_label = tk.Label(root, text="")
+    file_label.pack(pady=5)
+
+    password_label = tk.Label(root, text="Password:")
+    password_label.pack()
+    password_entry = tk.Entry(root, show="*")
+    password_entry.pack()
+
+    open_button = tk.Button(root, text="Select PDF", command=lambda: open_file_dialog(password_entry, file_label))
+    open_button.pack(pady=10)
 
     root.mainloop()
 
