@@ -60,6 +60,16 @@ function getQpdfPath() {
   }
 }
 
+// パスをエスケープする関数
+function escapePath(pathStr) {
+  if (process.platform === 'win32') {
+    // Windowsの場合、パスに空白が含まれていれば引用符で囲む
+    return pathStr.includes(' ') ? `"${pathStr}"` : pathStr;
+  }
+  // Unix系の場合、空白文字をエスケープ
+  return pathStr.replace(/ /g, '\\ ');
+}
+
 // PDFファイル選択のハンドラー
 ipcMain.handle('select-pdf', async () => {
   const result = await dialog.showOpenDialog({
@@ -83,15 +93,28 @@ ipcMain.handle('unlock-pdf', async (event, { filePath, password }) => {
 
     // バンドルされたqpdfバイナリを使用してパスワード解除を実行
     const qpdfPath = getQpdfPath();
-    const command = `"${qpdfPath}" --password=${password} --decrypt "${filePath}" "${outputPath}"`;
     
-    await execPromise(command);
+    // Windows環境での文字化け対策
+    const options = process.platform === 'win32' ? { encoding: 'utf8', shell: true } : {};
+    
+    // コマンドの構築
+    const escapedQpdfPath = escapePath(qpdfPath);
+    const escapedFilePath = escapePath(filePath);
+    const escapedOutputPath = escapePath(outputPath);
+    const escapedPassword = password.replace(/[&<>'"]/g, '\\$&'); // 特殊文字のエスケープ
+    
+    const command = `${escapedQpdfPath} --password=${escapedPassword} --decrypt ${escapedFilePath} ${escapedOutputPath}`;
+    
+    await execPromise(command, options);
     return { success: true, outputPath };
   } catch (error) {
     console.error('PDF処理エラー:', error);
     
-    // qpdfのエラーメッセージからパスワードエラーを判定
-    const isPasswordError = error.message.includes('invalid password');
+    // エラーメッセージの解析を改善
+    const errorMessage = error.message.toLowerCase();
+    const isPasswordError = errorMessage.includes('invalid password') || 
+                          errorMessage.includes('password incorrect') ||
+                          errorMessage.includes('パスワードが正しくありません');
     
     return { 
       success: false, 
