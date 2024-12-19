@@ -33,6 +33,34 @@ app.on('window-all-closed', function () {
   if (process.platform !== 'darwin') app.quit();
 });
 
+// qpdfバイナリのパスを取得する関数
+function getQpdfPath() {
+  // 開発環境とプロダクション環境でのパスの違いを考慮
+  const isDev = !app.isPackaged;
+  const platform = process.platform;
+  
+  let qpdfPath;
+  if (isDev) {
+    // 開発環境では直接binディレクトリを参照
+    qpdfPath = path.join(__dirname, 'bin');
+  } else {
+    // プロダクション環境ではextraResourcesを参照
+    qpdfPath = path.join(process.resourcesPath, 'bin');
+  }
+
+  // プラットフォーム別のバイナリパス
+  switch (platform) {
+    case 'win32':
+      return path.join(qpdfPath, 'qpdf-11.6.3-windows-x64', 'bin', 'qpdf.exe');
+    case 'darwin':
+      return path.join(qpdfPath, 'usr', 'local', 'bin', 'qpdf');
+    case 'linux':
+      return path.join(qpdfPath, 'qpdf-11.6.3', 'bin', 'qpdf');
+    default:
+      throw new Error('未対応のプラットフォームです');
+  }
+}
+
 // PDFファイル選択のハンドラー
 ipcMain.handle('select-pdf', async () => {
   const result = await dialog.showOpenDialog({
@@ -54,8 +82,9 @@ ipcMain.handle('unlock-pdf', async (event, { filePath, password }) => {
       `decrypted_${path.basename(filePath)}`
     );
 
-    // qpdfコマンドを使用してパスワード解除を実行
-    const command = `qpdf --password=${password} --decrypt "${filePath}" "${outputPath}"`;
+    // バンドルされたqpdfバイナリを使用してパスワード解除を実行
+    const qpdfPath = getQpdfPath();
+    const command = `"${qpdfPath}" --password=${password} --decrypt "${filePath}" "${outputPath}"`;
     
     await execPromise(command);
     return { success: true, outputPath };

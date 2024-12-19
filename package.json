@@ -6,7 +6,8 @@
   "scripts": {
     "start": "electron .",
     "build": "electron-builder",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "postinstall": "node scripts/download-qpdf.js"
   },
   "keywords": [],
   "author": "",
@@ -22,6 +23,13 @@
     },
     "win": {
       "target": "nsis"
-    }
+    },
+    "extraResources": [
+      {
+        "from": "bin",
+        "to": "bin",
+        "filter": ["**/*"]
+      }
+    ]
   }
 }
