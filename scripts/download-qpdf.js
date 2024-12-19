@@ -13,7 +13,8 @@ const libDir = path.join(__dirname, '..', 'lib');
 
 // QPDFのバージョンとダウンロードURL
 const QPDF_VERSION = '11.6.3';
-const WINDOWS_DOWNLOAD_URL = `https://github.com/qpdf/qpdf/releases/download/release-qpdf-${QPDF_VERSION}/qpdf-${QPDF_VERSION}-mingw64.zip`;
+// 新しいURLフォーマット
+const WINDOWS_DOWNLOAD_URL = `https://github.com/qpdf/qpdf/releases/download/v${QPDF_VERSION}/qpdf-${QPDF_VERSION}-windows-mingw64.zip`;
 
 // ファイルをダウンロードする関数（リダイレクトに対応）
 async function downloadFile(url, destPath) {
@@ -120,7 +121,7 @@ async function installQpdf() {
             .promise();
 
           // 必要なファイルをコピー
-          const qpdfBinDir = path.join(tempDir, `qpdf-${QPDF_VERSION}-mingw64`, 'bin');
+          const qpdfBinDir = path.join(tempDir, `qpdf-${QPDF_VERSION}-windows-mingw64`, 'bin');
           const files = fs.readdirSync(qpdfBinDir);
 
           console.log('必要なファイルをコピー中...');
