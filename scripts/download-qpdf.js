@@ -13,12 +13,22 @@ const libDir = path.join(__dirname, '..', 'lib');
 
 // QPDFのバージョンとダウンロードURL
 const QPDF_VERSION = '11.6.3';
-const WINDOWS_DOWNLOAD_URL = `https://github.com/qpdf/qpdf/releases/download/v${QPDF_VERSION}/qpdf-${QPDF_VERSION}-mingw64.zip`;
+const WINDOWS_DOWNLOAD_URL = `https://github.com/qpdf/qpdf/releases/download/release-qpdf-${QPDF_VERSION}/qpdf-${QPDF_VERSION}-mingw64.zip`;
 
-// ファイルをダウンロードする関数
+// ファイルをダウンロードする関数（リダイレクトに対応）
 async function downloadFile(url, destPath) {
   return new Promise((resolve, reject) => {
-    https.get(url, response => {
+    const request = https.get(url, response => {
+      // リダイレクトの処理
+      if (response.statusCode === 301 || response.statusCode === 302) {
+        const redirectUrl = response.headers.location;
+        console.log(`リダイレクト先: ${redirectUrl}`);
+        downloadFile(redirectUrl, destPath)
+          .then(resolve)
+          .catch(reject);
+        return;
+      }
+
       if (response.statusCode !== 200) {
         reject(new Error(`Download failed with status code: ${response.statusCode}`));
         return;
@@ -28,7 +38,15 @@ async function downloadFile(url, destPath) {
       pipeline(response, fileStream)
         .then(() => resolve())
         .catch(reject);
-    }).on('error', reject);
+    });
+
+    request.on('error', reject);
+    
+    // タイムアウトの設定
+    request.setTimeout(30000, () => {
+      request.destroy();
+      reject(new Error('Download timeout'));
+    });
   });
 }
 
