@@ -48,20 +48,28 @@ ipcMain.handle('select-pdf', async () => {
 ipcMain.handle('unlock-pdf', async (event, { filePath, password }) => {
   try {
     const pdfBytes = await fs.promises.readFile(filePath);
+    
+    // パスワードのみを指定してPDFを読み込み
     const pdfDoc = await PDFDocument.load(pdfBytes, { 
       password: password
     });
     
+    // パスワードが正しくない場合、上記のload時点でエラーが発生します
     const outputPath = path.join(
       path.dirname(filePath),
       `decrypted_${path.basename(filePath)}`
     );
     
-    const savedBytes = await pdfDoc.save();
+    // 暗号化を解除して保存
+    const savedBytes = await pdfDoc.save({
+      useObjectStreams: false,
+      updateEncryptionDict: false  // 暗号化情報を更新しない
+    });
     await fs.promises.writeFile(outputPath, savedBytes);
     
     return { success: true, outputPath };
   } catch (error) {
+    console.error('PDF処理エラー:', error);
     return { 
       success: false, 
       error: error.message.includes('password') ? 'パスワードが正しくありません' : error.message 
