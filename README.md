@@ -38,22 +38,10 @@ npm start
 
 ### ビルド方法
 
-Windows用実行ファイルの作成：
+各プラットフォーム用の実行ファイルの作成：
 
 ```bash
-npm run build:win
-```
-
-macOS用実行ファイルの作成：
-
-```bash
-npm run build:mac
-```
-
-Linux用実行ファイルの作成：
-
-```bash
-npm run build:linux
+npm run build
 ```
 
 ## 使用方法
